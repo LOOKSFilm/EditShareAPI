@@ -8,6 +8,8 @@ Copy EditShareAPI to `.\Users\$USER\AppData\Local\Programs\Python\Python310\Lib\
 ### Dependencies
 ```
 pip install requests
+```
+```
 pip install urllib3
 ```
 
