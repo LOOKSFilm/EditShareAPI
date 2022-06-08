@@ -1,8 +1,8 @@
 # EditShareAPI
-This is a Python module for the Editshare API: https://developers.editshare.com/
+A Python module for the Editshare API: https://developers.editshare.com/
 
 
-## Install on Windows
+## Install ![](https://cdn.icon-icons.com/icons2/1488/PNG/32/5314-windows_102509.png)
 Copy EditShareAPI to `.\Users\$USER\AppData\Local\Programs\Python\Python310\Lib\site-pakages`
 
 ### Dependencies
@@ -13,15 +13,12 @@ pip install requests
 pip install urllib3
 ```
 
-### Import
-```Python
-import EditShareAPI
-```
-
 ### Login
 ```Python
-EditShareAPI.login("Server IP", "USER", "PASSWORD")
+from EditShareAPI import EsAuth
+EsAuth.login("IP", "USER", "PASSWORD")
 ```
+returns 200 if logged in
 
 
 ## Flow Metadata
