@@ -1,22 +1,23 @@
 import requests
 import urllib3
 
-def login(ip, user, password) -> None:
-        urllib3.disable_warnings()
-        global session
-        session = requests.Session()
-        global server
-        server = ip
-        user = user
-        password = password
-        session.auth = (user, password)
-        data = [user, password]
-        connection = session.post(f"https://{server}:8006/api/v2/admin/check_password", verify=False, json=data)
-        return connection.status_code
+class EsAuth:
+    def login(ip, user, password) -> None:
+            urllib3.disable_warnings()
+            global session
+            session = requests.Session()
+            global server
+            server = ip
+            user = user
+            password = password
+            session.auth = (user, password)
+            data = [user, password]
+            connection = session.post(f"https://{server}:8006/api/v2/admin/check_password", verify=False, json=data)
+            return connection.status_code
 
-def ping():
-    ping = session.get(f"https://{server}:8006/api/v2/database/ping",verify=False)
-    return ping
+    def ping():
+        ping = session.get(f"https://{server}:8006/api/v2/database/ping",verify=False)
+        return ping
 
 class FlowMetadata:
 #############
