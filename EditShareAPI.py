@@ -1,40 +1,28 @@
 import requests
 import urllib3
 
-
-headers = {
-                'accept': 'application/json',
-                'Content-Type': 'application/json',
-            }
-
-
-
-class FlowMetadata:
-    """ 
-    connect to EditShare Server:
-
-    FlowMetadata("ip", "username", "password")
-
-    FlowMetadata.connection returns "true" if connected
-    """
-    def __init__(self, ip, user, password) -> None:
+def login(ip, user, password) -> None:
         urllib3.disable_warnings()
-        self.session = requests.Session()
-        self.server = ip
+        global session
+        session = requests.Session()
+        global server
+        server = ip
         user = user
         password = password
-        self.session.auth = (user, password)
+        session.auth = (user, password)
         data = [user, password]
-        self.connection = self.session.post('https://'+self.server+':8006/api/v2/admin/check_password', verify=False, headers=headers, json=data).text
-        
-    
-    def ping(self):
-        ping = self.session.get("https://"+self.server+":8006/api/v2/database/ping",verify=False, headers=headers)
-        return ping
+        connection = session.post(f"https://{server}:8006/api/v2/admin/check_password", verify=False, json=data)
+        return connection.status_code
+
+def ping():
+    ping = session.get(f"https://{server}:8006/api/v2/database/ping",verify=False)
+    return ping
+
+class FlowMetadata:
 #############
 ### ASSET ###
 #############
-    def addAsset(self, data):
+    def addAsset(data):
         """ 
         Input: Data in JSON format
 
@@ -42,10 +30,10 @@ class FlowMetadata:
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Assets%20and%20Asset%20Metadata/post_assets
         """
-        response = self.session.post('https://'+self.server+':8006/api/v2/database/assets', verify=False, headers=headers, json=data)
+        response = session.post(f"https://{server}:8006/api/v2/database/assets", verify=False, data=data)
         return response
 
-    def getAsset(self, asset_id, vendor_data=False):
+    def getAsset(asset_id, vendor_data=False):
         """ 
         Input: asset_id or uuid
         uuid has to be String
@@ -55,17 +43,17 @@ class FlowMetadata:
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Assets%20and%20Asset%20Metadata/get_assets__asset_id_
         """
         # params = (
-        #     ('vendor_data', vendor_data)
+        #     ("vendor_data", vendor_data)
         # )
         if type(asset_id) == int:
             asset_id = str(asset_id)
         try:
-            response = self.session.get('https://'+self.server+':8006/api/v2/database/assets/'+asset_id, verify=False, headers=headers).json()
+            response = session.get(f"https://{server}:8006/api/v2/database/assets/{asset_id}", verify=False).json()
         except TypeError:
-            print('EditShare Modul Error:\n-------------------------------------------------------------------------------------------\nID has to be String\n-------------------------------------------------------------------------------------------')
+            print("EditShare Modul Error:\n-------------------------------------------------------------------------------------------\nID has to be String\n-------------------------------------------------------------------------------------------")
         #I AM TRYING TO RETURN AN OBJECT BUT KEYERRORS ARE ANNOYING
         # class AssetData:
-        #     def __init__(self, response, asset_type, asset_type_id, asset_type_text, asset_version, comment, custom, customtypes, nle_id, origin_site, uuid):
+        #     def __init__(response, asset_type, asset_type_id, asset_type_text, asset_version, comment, custom, customtypes, nle_id, origin_site, uuid):
         #         self.data = response
         #         self.asset_type = asset_type
         #         self.asset_type_id = asset_type_id
@@ -79,10 +67,10 @@ class FlowMetadata:
         #         # self.thumbnail = thumbnail
         #         # self.thumbnail_path = thubnail_path
         #         self.uuid = uuid
-        # assetdata = AssetData(response, response['asset_type'],response['asset_type_id'],response['asset_type_text'],response['asset_version'],response['comment'],response['custom'],response['customtypes'],response['nle_id'],response['origin_site'],response['uuid'])
+        # assetdata = AssetData(response, response["asset_type"],response["asset_type_id"],response["asset_type_text"],response["asset_version"],response["comment"],response["custom"],response["customtypes"],response["nle_id"],response["origin_site"],response["uuid"])
         return response
     
-    def updateAsset(self, asset_id, data):
+    def updateAsset(asset_id, data):
         """ 
         Input: asset_id or uuid
         uuid has to be String
@@ -93,10 +81,10 @@ class FlowMetadata:
         """
         if type(asset_id) == int:
             asset_id = str(asset_id)
-        response = self.session.put('https://'+self.server+':8006/api/v2/database/assets/'+asset_id, verify=False, headers=headers, data=data)
+        response = session.put(f"https://{server}:8006/api/v2/database/assets/{asset_id}", verify=False, data=data)
         return response
     
-    def deleteAsset(self, asset_id):
+    def deleteAsset(asset_id):
         """ 
         Input: asset_id or uuid
         uuid has to be String
@@ -107,10 +95,10 @@ class FlowMetadata:
         """
         if type(asset_id) == int:
             asset_id = str(asset_id)
-        response = self.session.delete('https://'+self.server+':8006/api/v2/database/assets/'+asset_id, verify=False, headers=headers)
+        response = session.delete(f"https://{server}:8006/api/v2/database/assets/{asset_id}", verify=False)
         return response
     
-    def getAssetVendorData(self, asset_id):
+    def getAssetVendorData(asset_id):
         """ 
         Input: asset_id
 
@@ -120,10 +108,10 @@ class FlowMetadata:
         """
         if type(asset_id) == int:
             asset_id = str(asset_id)
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/assets/'+asset_id+'/vendor_data', verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/assets/{asset_id}/vendor_data", verify=False).json()
         return response
     
-    def getAssetAssociations(self, asset_id):
+    def getAssetAssociations(asset_id):
         """ 
         Input: asset_id or asset_collection_id or uuid
         uuid has to be String
@@ -134,10 +122,10 @@ class FlowMetadata:
         """
         if type(asset_id) == int:
             asset_id = str(asset_id)
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/assets/'+asset_id+'/associations', verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/assets/{asset_id}/associations", verify=False).json()
         return response
 
-    def associateAsset(self, asset_id, associated_asset_id):
+    def associateAsset(asset_id, associated_asset_id):
         """ 
         Input: asset_id, asset_association_id
 
@@ -149,10 +137,10 @@ class FlowMetadata:
             asset_id = str(asset_id)
         if type(associated_asset_id) == int:
             associated_asset_id = str(associated_asset_id)
-        response = self.session.put('https://'+self.server+':8006/api/v2/database/assets/'+asset_id+'/associations/'+associated_asset_id, verify=False, headers=headers).json()
+        response = session.put(f"https://{server}:8006/api/v2/database/assets/{asset_id}/associations/{associated_asset_id}", verify=False).json()
         return response
 
-    def deleteAssociation(self, asset_id, associated_asset_id):
+    def deleteAssociation(asset_id, associated_asset_id):
         """ 
         Input: asset_id, asset_association_id
 
@@ -164,10 +152,10 @@ class FlowMetadata:
             asset_id = str(asset_id)
         if type(associated_asset_id) == int:
             associated_asset_id = str(associated_asset_id)
-        response = self.session.delete('https://'+self.server+':8006/api/v2/database/assets/'+asset_id+'/associations/'+associated_asset_id, verify=False, headers=headers).json()
+        response = session.delete(f"https://{server}:8006/api/v2/database/assets/{asset_id}/associations/{associated_asset_id}", verify=False).json()
         return response
 
-    def addAssetAssosiation(self, data):
+    def addAssetAssosiation(data):
         """ 
         Input: Data in JSON format
 
@@ -175,10 +163,10 @@ class FlowMetadata:
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Assets%20and%20Asset%20Metadata/post_assets_associations
         """
-        response = self.session.post('https://'+self.server+':8006/api/v2/database/assets/associations', verify=False, headers=headers, data=data).json()
+        response = session.post(f"https://{server}:8006/api/v2/database/assets/associations", verify=False, data=data).json()
         return response
 
-    def getAssetAssosiation(self, asset_collection_id):
+    def getAssetAssosiation(asset_collection_id):
         """ 
         Input: asset_collection_id or uuid
         uuid has to be String
@@ -189,70 +177,70 @@ class FlowMetadata:
         """
         if type(asset_collection_id) == int:
             asset_collection_id = str(asset_collection_id)
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/assets/associations/'+asset_collection_id, verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/assets/associations/{asset_collection_id}", verify=False).json()
         return response
-    def addAssetAssosiation(self, asset_collection_id):
+    def addAssetAssosiation(asset_collection_id):
         """ 
         Input: asset_collection_id or uuid
         uuid has to be String
 
-        Modify an asset association, using the association's database ID.
+        Modify an asset association, using the association"s database ID.
         
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Assets%20and%20Asset%20Metadata/put_assets_associations__asset_collection_id_
         """
         if type(asset_collection_id) == int:
             asset_collection_id = str(asset_collection_id)
-        response = self.session.put('https://'+self.server+':8006/api/v2/database/assets/associations/'+asset_collection_id, verify=False, headers=headers).json()
+        response = session.put(f"https://{server}:8006/api/v2/database/assets/associations/{asset_collection_id}", verify=False).json()
         return response
     
-    def deleteAssetAssosiation(self, asset_collection_id):
+    def deleteAssetAssosiation(asset_collection_id):
         """ 
         Input: asset_collection_id or uuid
         uuid has to be String
 
-        Delete an asset association, using the association's database ID
+        Delete an asset association, using the association"s database ID
         
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Assets%20and%20Asset%20Metadata/delete_assets_associations__asset_collection_id_
         """
         if type(asset_collection_id) == int:
             asset_collection_id = str(asset_collection_id)
-        response = self.session.delete('https://'+self.server+':8006/api/v2/database/assets/associations/'+asset_collection_id, verify=False, headers=headers).json()
+        response = session.delete(f"https://{server}:8006/api/v2/database/assets/associations/{asset_collection_id}", verify=False).json()
         return response
 
-    def exportMetadata(self, asset_id):
+    def exportMetadata(asset_id):
         params = {
-            'export_format': 'xml',
-            'asset_metadata': 'true',
-            'asset_custom_metadata': 'true',
-            'file_details': 'true',
-            'location_details': 'true',
-            'backup_details': 'true',
-            'markers': 'true',
-            'csv_framerates': 'false',
-            'csv_comments': 'false',
-            'csv_bom': 'false',
+            "export_format": "xml",
+            "asset_metadata": "true",
+            "asset_custom_metadata": "true",
+            "file_details": "true",
+            "location_details": "true",
+            "backup_details": "true",
+            "markers": "true",
+            "csv_framerates": "false",
+            "csv_comments": "false",
+            "csv_bom": "false",
         }
         if type(asset_id) == int:
             asset_id = str(asset_id)
-        response = self.session.get("https://"+self.server+":8006/api/v2/database/assets/"+asset_id+"/export", params=params)
+        response = session.get(f"https://{server}:8006/api/v2/database/assets/{asset_id}/export", params=params)
         return response
 
 ###############
 ### CAPTURE ###
 ###############
-    def addCapture(self, data, createcaptureonly=False):
+    def addCapture(data, createcaptureonly=False):
         """ 
         Input: Data in JSON format
 
         Create new capture. If the cature id or recording id exists only a new chunk group is created.
         """
         params = (
-            ('createcaptureonly', createcaptureonly)
+            ("createcaptureonly", createcaptureonly)
         )
-        response = self.session.post('https://'+self.server+':8006/api/v2/database/captures', headers=headers, data=data, params=params)
+        response = session.post(f"https://{server}:8006/api/v2/database/captures", data=data, params=params)
         return response
 
-    def deleteCapture(self, capture_id):
+    def deleteCapture(capture_id):
         """ 
         Input: capture_id or uuid
         uuid has to be String
@@ -263,10 +251,10 @@ class FlowMetadata:
         """
         if type(capture_id) == int:
             capture_id = str(capture_id)
-        response = self.session.delete('https://'+self.server+':8006//api/v2/database/captures/'+capture_id, verify=False, headers=headers)
+        response = session.delete(f"https://{server}:8006//api/v2/database/captures/{capture_id}", verify=False)
         return response
 
-    def getCapture(self, capture_id):
+    def getCapture(capture_id):
         """ 
         Input: capture_id
 
@@ -276,10 +264,10 @@ class FlowMetadata:
         """
         if type(capture_id) == int:
             capture_id = str(capture_id)
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/captures/'+capture_id, verify=False, headers=headers)
+        response = session.get(f"https://{server}:8006/api/v2/database/captures/{capture_id}", verify=False)
         return response
 
-    def updateCapture(self, capture_id, data):
+    def updateCapture(capture_id, data):
         """ 
         Input: capture_id, Data in JSON format
 
@@ -289,10 +277,10 @@ class FlowMetadata:
         """
         if type(capture_id) == int:
             capture_id = str(capture_id)
-        response = self.session.put('https://'+self.server+':8006/api/v2/database/captures/'+capture_id, verify=False, headers=headers, data=data)
+        response = session.put(f"https://{server}:8006/api/v2/database/captures/{capture_id}", verify=False, data=data)
         return response
 
-    def getCaptureClips(self, capture_id):
+    def getCaptureClips(capture_id):
         """ 
         Input: capture_id
 
@@ -302,10 +290,10 @@ class FlowMetadata:
         """
         if type(capture_id) == int:
             capture_id = str(capture_id)
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/captures/'+capture_id+'/clips', verify=False, headers=headers)
+        response = session.get(f"https://{server}:8006/api/v2/database/captures/{capture_id}/clips", verify=False)
         return response
 
-    def getChunkGroup(self, capture_id):
+    def getChunkGroup(capture_id):
         """ 
         Input: capture_id
 
@@ -315,10 +303,10 @@ class FlowMetadata:
         """
         if type(capture_id) == int:
             capture_id = str(capture_id)
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/captures/'+capture_id+'/groups', verify=False, headers=headers)
+        response = session.get(f"https://{server}:8006/api/v2/database/captures/{capture_id}/groups", verify=False)
         return response
 
-    def getChunkGroupClips(self, capture_id, chunk_group_id):
+    def getChunkGroupClips(capture_id, chunk_group_id):
         """ 
         Input: capture_id, chunk_group_id
 
@@ -330,10 +318,10 @@ class FlowMetadata:
             capture_id = str(capture_id)
         if type(chunk_group_id) == int:
             chunk_group_id = str(chunk_group_id)
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/captures/'+capture_id+'/groups/'+chunk_group_id, verify=False, headers=headers)
+        response = session.get(f"https://{server}:8006/api/v2/database/captures/{capture_id}/groups/{chunk_group_id}", verify=False)
         return response
 
-    def deleteCaptureLogEntries(self, capture_id, log_entry_sources='user,qc,ingest,import,audio_metadata,video_metadata,review_approve'):
+    def deleteCaptureLogEntries(capture_id, log_entry_sources="user,qc,ingest,import,audio_metadata,video_metadata,review_approve"):
         """ 
         Input: capture_id
 
@@ -344,15 +332,15 @@ class FlowMetadata:
         if type(capture_id) == int:
             capture_id = str(capture_id)
         params = (
-            ('log entry sources', log_entry_sources)
+            ("log entry sources", log_entry_sources)
         )
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/captures/'+capture_id+'/log_entries', verify=False, headers=headers, params=params)
+        response = session.get(f"https://{server}:8006/api/v2/database/captures/{capture_id}/log_entries", verify=False, params=params)
         return response
 
 #############
 ### CLIPS ###
 #############
-    def getClips(self, limit=50, offset=0):
+    def getClips(limit=50, offset=0):
         """ 
         limit: Number of items to return in a paged list.
         offset: Offset from start of a paged list.
@@ -362,13 +350,13 @@ class FlowMetadata:
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Clips/get_clips
         """
         params = (
-            ('limit', limit),
-            ('offset', offset)
+            ("limit", limit),
+            ("offset", offset)
         )
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/clips', verify=False, headers=headers, params=params).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/clips", verify=False, params=params).json()
         return response
 
-    def addClip(self, data):
+    def addClip(data):
         """ 
         Input: JSON Data
 
@@ -376,10 +364,10 @@ class FlowMetadata:
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Clips/post_clips
         """
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/clips', verify=False, headers=headers, data=data).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/clips", verify=False, data=data).json()
         return response
     
-    def addSubclip(self, clip_id, data):
+    def addSubclip(clip_id, data):
         """ 
         Input: clip_id, JSON Data
 
@@ -389,28 +377,28 @@ class FlowMetadata:
         """
         if type(clip_id) == int:
             clip_id = str(clip_id)
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/clips/'+clip_id+'/subclip', verify=False, headers=headers, data=data).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/clips/{clip_id}/subclip", verify=False, data=data).json()
         return response
     
-    def getClipThumbnail(self, clip_id, frame=100, width=300, timecode='00:00:10:00'):
+    def getClipThumbnail(clip_id, frame=100, width=300, timecode="00:00:10:00"):
         """ 
         Input: clip_id
 
-        Get a clip's thumbnail.
+        Get a clip"s thumbnail.
         
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Clips/get_clips__clip_id__thumbnail
         """
         if type(clip_id) == int:
             clip_id = str(clip_id)
         params = (
-            ('frame', frame),
-            ('width', width),
-            ('timecode', timecode)
+            ("frame", frame),
+            ("width", width),
+            ("timecode", timecode)
         )
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/clips/'+clip_id+'/thumbnail', verify=False, headers=headers, params=params).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/clips/{clip_id}/thumbnail", verify=False, params=params).json()
         return response
     
-    def getClipUnc(self, clip_id):
+    def getClipUnc(clip_id):
         """ 
         Input: clip_id
 
@@ -420,10 +408,10 @@ class FlowMetadata:
         """
         if type(clip_id) == int:
             clip_id = str(clip_id)
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/clips/'+clip_id+'/unc', verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/clips/{clip_id}/unc", verify=False).json()
         return response
     
-    def updateClipData(self, clip_id, data):
+    def updateClipData(clip_id, data):
         """ 
         Input: clip_id, Data in JSON format
 
@@ -433,10 +421,10 @@ class FlowMetadata:
         """
         if type(clip_id) == int:
             clip_id = str(clip_id)
-        response = self.session.put('https://'+self.server+':8006/api/v2/database/clips/'+clip_id, verify=False, headers=headers, json=data).json()
+        response = session.put(f"https://{server}:8006/api/v2/database/clips/{clip_id}", verify=False, data=data).json()
         return response
 
-    def getClipData(self, clip_id, markers=False, proxy_details=False, display=True, custom_types=True, asset_site=True, checkexists=False, marker_comments=False, include_associations=False, include_descriptors=False):
+    def getClipData(clip_id, markers=False, proxy_details=False, display=True, custom_types=True, asset_site=True, checkexists=False, marker_comments=False, include_associations=False, include_descriptors=False):
         """ 
         Input: clip_id
 
@@ -444,20 +432,19 @@ class FlowMetadata:
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Clips/get_clips__clip_id_
         """
-        if type(clip_id) == int:
-            clip_id = str(clip_id)
+    
         params = (
-            ('markers', markers),
-            ('proxy_details', proxy_details),
-            ('display', display),
-            ('custom_types', custom_types),
-            ('asset_site', asset_site),
-            ('checkexists', checkexists),
-            ('marker_comments', marker_comments),
-            ('inculde_associations', include_associations),
-            ('include_descriptors', include_descriptors)
+            ("markers", markers),
+            ("proxy_details", proxy_details),
+            ("display", display),
+            ("custom_types", custom_types),
+            ("asset_site", asset_site),
+            ("checkexists", checkexists),
+            ("marker_comments", marker_comments),
+            ("inculde_associations", include_associations),
+            ("include_descriptors", include_descriptors)
         )
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/clips/'+clip_id, verify=False, headers=headers, params=params).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/clips/{clip_id}", verify=False, params=params).json()
         def keyExists(key):
             var = response.get(key)
             if var:
@@ -504,17 +491,17 @@ class FlowMetadata:
                 self.video = video
         #audio = keyExists("audio")
         clipdata = ClipData(
-            response, keyExists('aaf_filename'), keyExists('aaf_path'), keyExists('asset'), keyExists("audio"),
-            keyExists('capture'), keyExists('clip_id'), keyExists('display_aspect_ratio'), keyExists('display_audio'),
-            keyExists('display_filesize'), keyExists('display_filetype'), keyExists('display_frame_rate'), keyExists('display_name'),
-            keyExists('display_standard'), keyExists('display_video_codec'), keyExists('display_video_size'), keyExists('has_audio'),
-            keyExists('has_data'), keyExists('has_index_file'), keyExists('has_video'), keyExists('is_recording'), keyExists('metadata'),
-            keyExists('mob_ids'), keyExists('proxy_filename'), keyExists('proxy_has_index_file'), keyExists('proxy_id'), keyExists('proxy_path'),
-            keyExists('status_flags'), keyExists('status_text'), keyExists('video')
+            response, keyExists("aaf_filename"), keyExists("aaf_path"), keyExists("asset"), keyExists("audio"),
+            keyExists("capture"), keyExists("clip_id"), keyExists("display_aspect_ratio"), keyExists("display_audio"),
+            keyExists("display_filesize"), keyExists("display_filetype"), keyExists("display_frame_rate"), keyExists("display_name"),
+            keyExists("display_standard"), keyExists("display_video_codec"), keyExists("display_video_size"), keyExists("has_audio"),
+            keyExists("has_data"), keyExists("has_index_file"), keyExists("has_video"), keyExists("is_recording"), keyExists("metadata"),
+            keyExists("mob_ids"), keyExists("proxy_filename"), keyExists("proxy_has_index_file"), keyExists("proxy_id"), keyExists("proxy_path"),
+            keyExists("status_flags"), keyExists("status_text"), keyExists("video")
             )
         return clipdata
 
-    def deleteClip(self, clip_id):
+    def deleteClip(clip_id):
         """ 
         Input: clip_id
 
@@ -524,10 +511,10 @@ class FlowMetadata:
         """
         if type(clip_id) == int:
             clip_id = str(clip_id)
-        response = self.session.delete('https://'+self.server+':8006/api/v2/database/clips/'+clip_id, verify=False, headers=headers).json()
+        response = session.delete(f"https://{server}:8006/api/v2/database/clips/{clip_id}", verify=False).json()
         return response
 
-    def getFileDetails(self, clip_id):
+    def getFileDetails(clip_id):
         """ 
         Input: clip_id
 
@@ -537,10 +524,10 @@ class FlowMetadata:
         """
         if type(clip_id) == int:
             clip_id = str(clip_id)
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/clips/'+clip_id+'/file_details', verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/clips/{clip_id}/file_details", verify=False).json()
         return response
 
-    def getFileIds(self, clip_id):
+    def getFileIds(clip_id):
         """ 
         Input: clip_id
 
@@ -550,10 +537,10 @@ class FlowMetadata:
         """
         if type(clip_id) == int:
             clip_id = str(clip_id)
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/clips/'+clip_id+'/file_ids', verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/clips/{clip_id}/file_ids", verify=False).json()
         return response
 
-    def getClipLocation(self, clip_id):
+    def getClipLocation(clip_id):
         """ 
         Input: clip_id
 
@@ -563,10 +550,10 @@ class FlowMetadata:
         """
         if type(clip_id) == int:
             clip_id = str(clip_id)
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/clips/'+clip_id+'/locations', verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/clips/{clip_id}/locations", verify=False).json()
         return response
 
-    def addProxyLink(self, clip_id, data):
+    def addProxyLink(clip_id, data):
         """ 
         Input: "clip_id", JSON Data
 
@@ -577,10 +564,10 @@ class FlowMetadata:
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Clips/post_clips__clip_id__proxy_links
         """
-        response = self.session.post('https://'+self.server+':8006/api/v2/database/clips/'+clip_id+'/proxy_links', verify=False, headers=headers, data=data).json()
+        response = session.post(f"https://{server}:8006/api/v2/database/clips/{clip_id}/proxy_links", verify=False, data=data).json()
         return response
 
-    def deleteProxyLink(self, clip_id):
+    def deleteProxyLink(clip_id):
         """ 
         Input: "clip_id"
 
@@ -590,10 +577,10 @@ class FlowMetadata:
         """
         if type(clip_id) == int:
             clip_id = str(clip_id)
-        response = self.session.delete('https://'+self.server+':8006/api/v2/database/clips/'+clip_id+'/proxy_links', verify=False, headers=headers).json()
+        response = session.delete(f"https://{server}:8006/api/v2/database/clips/{clip_id}/proxy_links", verify=False).json()
         return response
 
-    def getProxyLink(self, clip_id):
+    def getProxyLink(clip_id):
         """ 
         Input: "clip_id"
 
@@ -603,10 +590,10 @@ class FlowMetadata:
         """
         if type(clip_id) == int:
             clip_id = str(clip_id)
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/clips/'+clip_id+'/proxy_links', verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/clips/{clip_id}/proxy_links", verify=False).json()
         return response
 
-    def updateImageSequence(self, clip_id, data):
+    def updateImageSequence(clip_id, data):
         """ 
         Input: clip_id, JSON Data
 
@@ -616,10 +603,10 @@ class FlowMetadata:
         """
         if type(clip_id) == int:
             clip_id = str(clip_id)
-        response = self.session.put('https://'+self.server+':8006/api/v2/database/clips/'+clip_id+'/image_sequence', verify=False, headers=headers, data=data).json()
+        response = session.put(f"https://{server}:8006/api/v2/database/clips/{clip_id}/image_sequence", verify=False, data=data).json()
         return response
 
-    def addPlaceholder(self, data):
+    def addPlaceholder(data):
         """ 
         Input: JSON Data
 
@@ -627,10 +614,10 @@ class FlowMetadata:
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Clips/post_clips_placeholders
         """
-        response = self.session.post('https://'+self.server+':8006/api/v2/database/clips/placeholders', verify=False, headers=headers, json=data).json()
+        response = session.post(f"https://{server}:8006/api/v2/database/clips/placeholders", verify=False, data=data).json()
         return response
     
-    def addClipsToIngest(self, data):
+    def addClipsToIngest(data):
         """ 
         Input: JSON Data
 
@@ -638,31 +625,31 @@ class FlowMetadata:
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Clips/put_clips_status
         """
-        response = self.session.post('https://'+self.server+':8006/api/v2/database/clips/status', verify=False, headers=headers, data=data).json()
+        response = session.post(f"https://{server}:8006/api/v2/database/clips/status", verify=False, data=data).json()
         return response
 
 ################      
 ### METADATA ###
 ################
-    def updateMetadata(self, metadata_id, data):
+    def updateMetadata(metadata_id, data):
         if type(metadata_id) == int:
             metadata_id = str(metadata_id)
-        response = self.session.put('https://'+self.server+':8006/api/v2/database/metadata/'+metadata_id, verify=False, headers=headers, json=data).json()
+        response = session.put(f"https://{server}:8006/api/v2/database/metadata/{metadata_id}", verify=False, data=data).json()
         return response
 
 #######################        
 ### CUSTOM METADATA ###
 #######################
-    def getCustomMetadataConfig(self):
+    def getCustomMetadataConfig():
         """ 
         Get Custom Metadata configurations available to a user.
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Custom%20Asset%20Metadata%20Configurations/get_custom_metadata_configurations
         """
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/custom_metadata_configurations', verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/custom_metadata_configurations", verify=False).json()
         return response
 
-    def addCustomMetadataConfig(self, data):
+    def addCustomMetadataConfig(data):
         """ 
         Input: JSON Data
 
@@ -670,10 +657,10 @@ class FlowMetadata:
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Custom%20Asset%20Metadata%20Configurations/post_custom_metadata_configurations
         """
-        response = self.session.post('https://'+self.server+':8006/api/v2/database/custom_metadata_configurations', verify=False, headers=headers, data=data).json()
+        response = session.post(f"https://{server}:8006/api/v2/database/custom_metadata_configurations", verify=False, data=data).json()
         return response
 
-    def deleteCustomMetadataConfig(self, configuration_id):
+    def deleteCustomMetadataConfig(configuration_id):
         """ 
         Input: configuration_id
 
@@ -683,10 +670,10 @@ class FlowMetadata:
         """
         if type(configuration_id) == int:
             configuration_id = configuration_id
-        response = self.session.delete('https://'+self.server+':8006/api/v2/database/custom_metadata_configurations/'+configuration_id, verify=False, headers=headers).json()
+        response = session.delete(f"https://{server}:8006/api/v2/database/custom_metadata_configurations/{configuration_id}", verify=False).json()
         return response
     
-    def updateCustomMetadataConfig(self, configuration_id, data):
+    def updateCustomMetadataConfig(configuration_id, data):
         """ 
         Input: configuration_id, JSON Data
 
@@ -696,28 +683,28 @@ class FlowMetadata:
         """
         if type(configuration_id) == int:
             configuration_id = configuration_id
-        response = self.session.put('https://'+self.server+':8006/api/v2/database/custom_metadata_configurations/'+configuration_id, verify=False, headers=headers, data=data).json()
+        response = session.put(f"https://{server}:8006/api/v2/database/custom_metadata_configurations/{configuration_id}", verify=False, data=data).json()
         return response
 
-    def getBasicCustomMetadataConfig(self):
+    def getBasicCustomMetadataConfig():
         """ 
-        Get a basic list of a user's Custom Metadata Configurations.
+        Get a basic list of a user"s Custom Metadata Configurations.
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Custom%20Asset%20Metadata%20Configurations/get_custom_metadata_configurations_basic_true
         """
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/custom_metadata_configurations?basic=true', verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/custom_metadata_configurations?basic=true", verify=False).json()
         return response
 
-    def getCustomMetadataFields(self):
+    def getCustomMetadataFields():
         """ 
         Get all custom meta data fields.
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Custom%20Metadata%20Fields/get_custom_metadata_fields
         """
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/custom_metadata_fields', verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/custom_metadata_fields", verify=False).json()
         return response
 
-    def addCustomMetadataField(self, data):
+    def addCustomMetadataField(data):
         """ 
         Input: JSON Data
 
@@ -725,10 +712,10 @@ class FlowMetadata:
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Custom%20Metadata%20Fields/post_custom_metadata_fields
         """
-        response = self.session.post('https://'+self.server+':8006/api/v2/database/custom_metadata_fields', verify=False, headers=headers, data=data).json()
+        response = session.post(f"https://{server}:8006/api/v2/database/custom_metadata_fields", verify=False, data=data).json()
         return response
 
-    def deleteCustomMetadataField(self, custom_field_id):
+    def deleteCustomMetadataField(custom_field_id):
         """ 
         Input: custom_field_id
 
@@ -738,10 +725,10 @@ class FlowMetadata:
         """
         if type(custom_field_id) == int:
             custom_field_id = str(custom_field_id)
-        response = self.session.delete('https://'+self.server+':8006/api/v2/database/custom_metadata_fields/'+custom_field_id, verify=False, headers=headers).json()
+        response = session.delete(f"https://{server}:8006/api/v2/database/custom_metadata_fields/{custom_field_id}", verify=False).json()
         return response
 
-    def getCustomMetadataField(self, custom_field_id):
+    def getCustomMetadataField(custom_field_id):
         """ 
         Input: custom_field_id or custom_field_uuid
             custom_field_uuid has to be String
@@ -750,33 +737,33 @@ class FlowMetadata:
         """
         if type(custom_field_id) == int:
             custom_field_id = str(custom_field_id)
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/custom_metadata_fields/'+custom_field_id, verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/custom_metadata_fields/{custom_field_id}", verify=False).json()
         return response
 
-    def updateCustomMetadataFieldUI(self, custom_field_id, data):
+    def updateCustomMetadataFieldUI(custom_field_id, data):
         """ 
         Input: custom_field_id, JSON Data
         
-        Update Custom Metadata Field's UI options.
+        Update Custom Metadata Field"s UI options.
             UI options are: normal, buttons, icons
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Custom%20Metadata%20Fields/put_custom_metadata_fields__custom_field_id_
         """
         if type(custom_field_id) == int:
             custom_field_id = str(custom_field_id)
-        response = self.session.put('https://'+self.server+':8006/api/v2/database/custom_metadata_fields/'+custom_field_id, verify=False, headers=headers, data=data).json()
+        response = session.put(f"https://{server}:8006/api/v2/database/custom_metadata_fields/{custom_field_id}", verify=False, data=data).json()
         return response
 
-    def getCustomMetadataGroupsUI(self):
+    def getCustomMetadataGroupsUI():
         """ 
         Get custom metadata ui groups for configuration.
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Custom%20Metadata%20Fields/get_custom_metadata_groups
         """
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/custom_metadata_groups', verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/custom_metadata_groups", verify=False).json()
         return response
 
-    def getCustomMetadataGroupUI(self, custom_metadata_group_id):
+    def getCustomMetadataGroupUI(custom_metadata_group_id):
         """ 
         Input: custom_metadata_group_id
         
@@ -786,19 +773,19 @@ class FlowMetadata:
         """
         if type(custom_metadata_group_id) == int:
             custom_metadata_group_id = str(custom_metadata_group_id)
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/custom_metadata_fields/'+custom_metadata_group_id, verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/custom_metadata_fields/{custom_metadata_group_id}", verify=False).json()
         return response
 
-    def getCustomMetadataTypes(self):
+    def getCustomMetadataTypes():
         """ 
         List all Custom Asset Types.
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Custom%20Asset%20Types/get_custom_asset_types
         """
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/custom_asset_types', verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/custom_asset_types", verify=False).json()
         return response
 
-    def addCustomMetadataType(self, data):
+    def addCustomMetadataType(data):
         """ 
         Input: JSON Data
         
@@ -806,10 +793,10 @@ class FlowMetadata:
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Custom%20Asset%20Types/post_custom_asset_types
         """
-        response = self.session.post('https://'+self.server+':8006/api/v2/database/custom_asset_types', verify=False, headers=headers, data=data).json()
+        response = session.post(f"https://{server}:8006/api/v2/database/custom_asset_types", verify=False, data=data).json()
         return response
 
-    def deleteCustomMetadataType(self, custom_asset_type_id):
+    def deleteCustomMetadataType(custom_asset_type_id):
         """ 
         Input: custom_asset_type_id
         
@@ -819,10 +806,10 @@ class FlowMetadata:
         """
         if type(custom_asset_type_id) == int:
             custom_asset_type_id = str(custom_asset_type_id)
-        response = self.session.delete('https://'+self.server+':8006/api/v2/database/custom_asset_types/'+custom_asset_type_id, verify=False, headers=headers).json()
+        response = session.delete(f"https://{server}:8006/api/v2/database/custom_asset_types/{custom_asset_type_id}", verify=False).json()
         return response
 
-    def getCustomMetadataType(self, custom_asset_type_id):
+    def getCustomMetadataType(custom_asset_type_id):
         """ 
         Input: custom_asset_type_id
         
@@ -832,10 +819,10 @@ class FlowMetadata:
         """
         if type(custom_asset_type_id) == int:
             custom_asset_type_id = str(custom_asset_type_id)
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/custom_asset_types/'+custom_asset_type_id, verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/custom_asset_types/{custom_asset_type_id}", verify=False).json()
         return response
 
-    def updateCustomMetadataType(self, custom_asset_type_id):
+    def updateCustomMetadataType(custom_asset_type_id):
         """ 
         Input: custom_asset_type_id
         
@@ -845,13 +832,13 @@ class FlowMetadata:
         """
         if type(custom_asset_type_id) == int:
             custom_asset_type_id = str(custom_asset_type_id)
-        response = self.session.put('https://'+self.server+':8006/api/v2/database/custom_asset_types/'+custom_asset_type_id, verify=False, headers=headers).json()
+        response = session.put(f"https://{server}:8006/api/v2/database/custom_asset_types/{custom_asset_type_id}", verify=False).json()
         return response
 
 ############        
 ### FILE ###
 ############     
-    def getFiles(self, hash=None, media_space=None, path=None, user=None, filename=None, filesize=None):
+    def getFiles(hash=None, media_space=None, path=None, user=None, filename=None, filesize=None):
         """ 
         Input: custom_asset_type_id
         
@@ -860,16 +847,16 @@ class FlowMetadata:
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Files/get_files
         """
         params = (
-            ('hash', hash),
-            ('media_space', media_space),
-            ('path', path),
-            ('user', user),
-            ('filename', filename),
-            ('filesize', filesize)
+            ("hash", hash),
+            ("media_space", media_space),
+            ("path", path),
+            ("user", user),
+            ("filename", filename),
+            ("filesize", filesize)
         )
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/files', verify=False, headers=headers, params=params).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/files", verify=False, params=params).json()
         return response
-    def getFile(self, file_id):
+    def getFile(file_id):
         """ 
         Input: custom_asset_type_id
         
@@ -879,13 +866,13 @@ class FlowMetadata:
         """
         if type(file_id) == int:
             file_id = str(file_id)
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/files/'+file_id, verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/files/"+file_id, verify=False).json()
         return response
 
 ###############        
 ### MARKERS ###
 ###############
-    def getMarkers(self, capture_id=None, uuid='',  log_entry_sources='', custom=True, include_comments=True):
+    def getMarkers(capture_id=None, uuid="",  log_entry_sources="", custom=True, include_comments=True):
         """
         You must specify either the capture id or uuid.
             You can optionally specify a list of source types to include.
@@ -895,39 +882,37 @@ class FlowMetadata:
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Markers/get_log_entries
         """
         params = (
-            ('capture_id', capture_id),
-            ('uuid', uuid),
-            ('log_entry_source', log_entry_sources),
-            ('custom', custom),
-            ('include_comments', include_comments)
+            ("capture_id", capture_id),
+            ("uuid", uuid),
+            ("log_entry_source", log_entry_sources),
+            ("custom", custom),
+            ("include_comments", include_comments)
         )
         
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/log_entries', verify=False, headers=headers, params=params).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/log_entries", verify=False, params=params).json()
         return response
     
-    def addCustomMarker(self, capture_id, in_time, out_time, fps, field_id, text, color='#00ff00'):
+    def addCustomMarker(capture_id, in_time, out_time, fps, field_id, text, color="#00ff00"):
         """
         Input: int(capture_id), str(in_time), str(out_time), int(fps), int(field_id), str(text)
             Timcode format for in and out: HH:MM:SS:FF
-            optional: color='hex'
+            optional: color="hex"
 
         Get all markers for a capture.
         
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Markers/get_log_entries
         """
-        data = {
-            'capture_id': capture_id,
-            'in_time': in_time+':'+str(fps)+'/1',
-            'out_time': out_time+':'+str(fps)+'/1',
-            'custom': {
-                'field_'+str(field_id): text
-            },
-            'color': color
-        }
-        response = self.session.post('https://'+self.server+':8006/api/v2/database/log_entries', verify=False, headers=headers, json=data).json()
+        data = dict()
+        data["capture_id"] = capture_id
+        data["in_time"] = f"{in_time}:{fps}/1"
+        data["out_time"] = f"{out_time}:{fps}/1"
+        data["custom"] = dict()
+        data["custom"][f"field_{field_id}"] = text
+        data["color"] = color
+        response = session.post(f"https://{server}:8006/api/v2/database/log_entries", verify=False, data=data).json()
         return response
 
-    def deleteCustomMarker(self, log_entry_id):
+    def deleteCustomMarker(log_entry_id):
         """
         Input: log_entry_id
 
@@ -935,10 +920,10 @@ class FlowMetadata:
         
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Markers/delete_log_entries__log_entry_id_
         """
-        response = self.session.delete('https://'+self.server+':8006/api/v2/database/log_entries/'+str(log_entry_id), verify=False, headers=headers).json()
+        response = session.delete(f"https://{server}:8006/api/v2/database/log_entries/"+str(log_entry_id), verify=False).json()
         return response
     
-    def updateCustomMarker(self, log_entry_id, field_id, text, color='#00ff00'):
+    def updateCustomMarker(log_entry_id, field_id, text, color="#00ff00"):
         """
         Input: int(capture_id), str(in_time), str(out_time), int(fps), int(field_id), str(text)
 
@@ -946,85 +931,56 @@ class FlowMetadata:
         
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Markers/get_log_entries
         """
-        data = {
-            'custom': {
-                'field_'+str(field_id): text
-            },
-            'color': color
-        }
-        response = self.session.put('https://'+self.server+':8006/api/v2/database/log_entries/'+str(log_entry_id), verify=False, headers=headers, json=data).json()
+        data = dict()
+        data["custom"] = dict()
+        data["custom"][f"field_{field_id}"] = text
+        data["color"] = color
+        response = session.put(f"https://{server}:8006/api/v2/database/log_entries/"+str(log_entry_id), verify=False, data=data).json()
         return response
 
 ##############        
 ### SEARCH ###
 ##############
-    def searchQuick(self, term):
+    def searchQuick(term):
         """ 
         Input: Searchterm as String
 
         Returns Clip ids of search result
         """
         term = str(term)
-        response = self.session.get('https://'+self.server+':8006/api/v2/search?q='+term, verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/search?q="+term, verify=False).json()
         clipids = []
         for hit in response:
-            clipids.append(hit['clip_id'])
+            clipids.append(hit["clip_id"])
         return clipids
 
-    def getMediaSpaceClips(self, mediaspace):
+    def getMediaSpaceClips(mediaspace):
         """ 
         Input: Mediaspace Name
 
         Returns all Clip ids of the Mediaspace
         """
         mediaspace = str(mediaspace)
-        response = self.session.get('https://'+self.server+':8006/api/v2/search?mediaspace='+mediaspace, verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/search?mediaspace="+mediaspace, verify=False).json()
         clipids = []
         for hit in response:
             if "clip_id" in hit:
-                clipids.append(hit['clip_id'])
+                clipids.append(hit["clip_id"])
         return clipids
 
-    def getMediaSpaces(self):
+    def getMediaSpaces():
         """ 
         Returns all avialable Mediaspacesdata for User
         """
-        response = self.session.get('https://'+self.server+':8006/api/v2/database/mediaspaces', verify=False, headers=headers).json()
+        response = session.get(f"https://{server}:8006/api/v2/database/mediaspaces", verify=False).json()
         return response
 
-    def searchAdvanced(self, data):
+    def searchAdvanced(data):
         """
         Advanced search.
 
-        Data Example:
-        {
-            "combine": "MATCH_ALL",
-            "filters": [
-                    {
-                        "field": {
-                            "fixed_field": "CLIPNAME",
-                            "group": "SEARCH_FILES",
-                            "read_only": true,
-                            "type": "QString"
-                        },
-                        "match": "BEGINS_WITH",
-                        "search": "Rivers"
-                    },
-                    {
-                        "field": {
-                            "fixed_field": "MEDIA_SPACES_NAMES",
-                            "group": "SEARCH_FILES",
-                            "read_only": true,
-                            "type": "QString"
-                        },
-                    "match": "EQUAL_TO",
-                    "search": "LandscapesMediaSpace"
-                    }
-                ]
-        }
-
         """
-        response = self.session.post('https://'+self.server+':8006/api/v2/search', verify=False, json=data, headers=headers).json()
+        response = session.post(f"https://{server}:8006/api/v2/search", verify=False, data=data).json()
         return response
 
     
@@ -1041,25 +997,25 @@ class FlowTransfer:
 
     FlowTransfer.connection returns <Response [200]> if connected
     """
-    def __init__(self, ip, user, password) -> None:
+    def __init__(ip, user, password) -> None:
         urllib3.disable_warnings()
-        self.session = requests.Session()
+        session = requests.Session()
         self.server = ip
         user = user
         password = password
-        self.session.auth = (user, password)
+        session.auth = (user, password)
         data = [user, password]
-        self.connection = self.session.post('https://'+self.server+':8006/api/v2/admin/check_password', verify=False, headers=headers, json=data)
+        self.connection = session.post(f"https://{server}:8006/api/v2/admin/check_password", verify=False, json=data)
         pass
 
 ############       
 ### COPY ###
 ############
-    def getCopy(self):
-        response = self.session.get('https://'+self.server+':8006/api/v2/transfer/copy', verify=False, headers=headers).json()
+    def getCopy():
+        response = session.get(f"https://{server}:8006/api/v2/transfer/copy", verify=False).json()
         return response
 
-    def copyClipsById(self, source_file_id, destination_mediaspace):
+    def copyClipsById(source_file_id, destination_mediaspace):
         data = {"copy_operation_list": [
                 {
                 "destination_mediaspace": destination_mediaspace,
@@ -1067,7 +1023,7 @@ class FlowTransfer:
                 }
             ]
         }
-        response = self.session.post('https://'+self.server+':8006/api/v2/transfer/copy', verify=False, headers=headers, json=data).json()
+        response = session.post(f"https://{server}:8006/api/v2/transfer/copy", verify=False, json=data).json()
         return response
 
 
@@ -1081,15 +1037,15 @@ class FlowAdmin:
 
     FlowTransfer.connection returns <Response [200]> if connected
     """
-    def __init__(self, ip, user, password) -> None:
+    def __init__(ip, user, password) -> None:
         urllib3.disable_warnings()
-        self.session = requests.Session()
+        session = requests.Session()
         self.server = ip
         user = user
         password = password
-        self.session.auth = (user, password)
+        session.auth = (user, password)
         data = [user, password]
-        self.connection = self.session.post('https://'+self.server+':8006/api/v2/admin/check_password', verify=False, headers=headers, json=data)
+        self.connection = session.post(f"https://{server}:8006/api/v2/admin/check_password", verify=False, json=data)
         pass
 
 
@@ -1104,20 +1060,20 @@ class Storage:
 
     FlowTransfer.connection returns <Response [200]> if connected
     """
-    def __init__(self, ip, user, password) -> None:
+    def __init__(ip, user, password) -> None:
         urllib3.disable_warnings()
-        self.session = requests.Session()
+        session = requests.Session()
         self.server = ip
         user = user
         password = password
-        self.session.auth = (user, password)
+        session.auth = (user, password)
         data = [user, password]
-        self.connection = self.session.post('https://'+self.server+':8006/api/v1/storage/auth', verify=False, headers=headers)
+        self.connection = session.post(f"https://{server}:8006/api/v1/storage/auth", verify=False)
         pass
 
-    def getSpaces(self):
+    def getSpaces():
         """ 
         Returns all avialable Spaces for User
         """
-        response = self.session.get('https://'+self.server+':8006/api/v1/storage/spaces?details=true', verify=False, headers=headers).json()    
+        response = session.get(f"https://{server}:8006/api/v1/storage/spaces?details=true", verify=False).json()    
         return response
