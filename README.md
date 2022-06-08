@@ -26,7 +26,7 @@ https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata
 
 ### Import
 ```Python
-From EditShareAPI import FlowMetadata
+from EditShareAPI import FlowMetadata
 ```
 
 ### get all Clip-Ids of a Mediaspace
