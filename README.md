@@ -18,10 +18,10 @@ https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata
 
 ### Import
 ```Python
-from EditShareAPI import FlowMetadata
+import EditShareAPI
 ```
 
 ### Login
 ```Python
-flow = FlowMetadata("Server IP", "USER", "PASSWORD")
+EditShareAPI.login("Server IP", "USER", "PASSWORD")
 ```
