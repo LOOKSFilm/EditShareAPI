@@ -3,7 +3,7 @@ A Python module for the Editshare API: https://developers.editshare.com/
 
 
 ## Install ![](https://cdn.icon-icons.com/icons2/1488/PNG/32/5314-windows_102509.png)
-Copy EditShareAPI to `.\Users\$USER\AppData\Local\Programs\Python\Python310\Lib\site-pakages`
+Copy EditShareAPI to `.\Users\$USER\AppData\Local\Programs\Python\Python$version\Lib\site-pakages`
 
 ### Dependencies
 ```
