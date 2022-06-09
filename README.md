@@ -33,4 +33,4 @@ from EditShareAPI import FlowMetadata
 ```Python
 FlowMetadata.getMediaSpaceClips("MediaSpaceName")
 ```
-return list of Clipids of the Mediaspace.
+returns list of Clipids of the Mediaspace.
