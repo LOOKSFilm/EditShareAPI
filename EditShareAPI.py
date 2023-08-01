@@ -1,5 +1,6 @@
 import requests
 import urllib3
+import json
 
 class EsAuth:
     def login(ip, user, password) -> None:
@@ -10,7 +11,16 @@ class EsAuth:
             server = ip
             global dbUrl
             dbUrl = f"https://{server}:8006/api/v2/database"
+            global searchUrl
+            searchUrl = f"https://{server}:8006/api/v2/search"
+            global automationUrl
+            automationUrl = f"https://{server}:8006/api/v2/automation"
+            global mountUrl
+            mountUrl = f"https://{server}:8006/api/v2/mount"
+            global scanUrl
+            scanUrl = f"https://{server}:8006/api/v2/scan"
             session.auth = (user, password)
+            #print(session.auth)
             data = [user, password]
             connection = session.post(f"https://{server}:8006/api/v2/admin/check_password", verify=False, json=data)
             return connection.status_code
@@ -22,6 +32,7 @@ class FlowMetadata:
     def ping():
         ping = session.get(f"{dbUrl}/ping", verify=False)
         return ping
+    
     def addAsset(data):
         """ 
         Input: dict
@@ -41,27 +52,7 @@ class FlowMetadata:
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Assets%20and%20Asset%20Metadata/get_assets__asset_id_
         """
-        # params = (
-        #     ("vendor_data", vendor_data)
-        # )
         response = session.get(f"{dbUrl}/assets/{asset_id}", verify=False).json()
-        #I AM TRYING TO RETURN AN OBJECT BUT KEYERRORS ARE ANNOYING
-        # class AssetData:
-        #     def __init__(response, asset_type, asset_type_id, asset_type_text, asset_version, comment, custom, customtypes, nle_id, origin_site, uuid):
-        #         self.data = response
-        #         self.asset_type = asset_type
-        #         self.asset_type_id = asset_type_id
-        #         self.asset_type_text = asset_type_text
-        #         self.asset_version = asset_version
-        #         self.comment = comment
-        #         self.custom = custom
-        #         self.customtypes = customtypes
-        #         self.nle_id = nle_id
-        #         self.origin_site = origin_site
-        #         # self.thumbnail = thumbnail
-        #         # self.thumbnail_path = thubnail_path
-        #         self.uuid = uuid
-        # assetdata = AssetData(response, response["asset_type"],response["asset_type_id"],response["asset_type_text"],response["asset_version"],response["comment"],response["custom"],response["customtypes"],response["nle_id"],response["origin_site"],response["uuid"])
         return response
     
     def updateAsset(asset_id, data):
@@ -216,7 +207,7 @@ class FlowMetadata:
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Captures/delete_captures__capture_id_
         """
-        response = session.delete(f"https://{server}:8006//api/v2/database/captures/{capture_id}", verify=False)
+        response = session.delete(f"{dbUrl}/captures/{capture_id}", verify=False)
         return response
 
     def getCapture(capture_id):
@@ -390,61 +381,7 @@ class FlowMetadata:
             ("include_descriptors", include_descriptors)
         )
         response = session.get(f"{dbUrl}/clips/{clip_id}", verify=False, params=params).json()
-        def keyExists(key):
-            var = response.get(key)
-            if var:
-                var = response[key]
-            else:
-                var = None 
-            return var
-        class ClipData:
-            def __init__(
-                self, response, aaf_filename, aaf_path, asset, audio, capture, clip_id, display_aspect_ratio, display_audio, 
-                display_filesize, display_filetype, display_frame_rate, display_name, display_standard, display_video_codec, 
-                display_video_size, has_audio, has_data, has_index_file, has_video, is_recording, metadata, mob_ids, proxy_filename,
-                proxy_has_index_file, proxy_id, proxy_path, status_flags, status_text, video
-                ):
-                self.data = response
-                self.aaf_filename = aaf_filename
-                self.aaf_path = aaf_path
-                self.asset = asset
-                self.audio = audio
-                self.capture = capture
-                self.clip_id = clip_id
-                self.display_aspect_ratio = display_aspect_ratio
-                self.display_audio = display_audio
-                self.display_filesize = display_filesize
-                self.display_filetype = display_filetype
-                self.display_frame_rate = display_frame_rate
-                self.display_name = display_name
-                self.display_standard = display_standard
-                self.display_video_codec = display_video_codec
-                self.display_video_size = display_video_size
-                self.has_audio = has_audio
-                self.has_data = has_data
-                self.has_index_file = has_index_file
-                self.has_video = has_video
-                self.is_recording = is_recording
-                self.metadata = metadata
-                self.mob_ids = mob_ids
-                self.proxy_filename = proxy_filename
-                self.proxy_has_index_file = proxy_has_index_file
-                self.proxy_id = proxy_id
-                self.proxy_path = proxy_path
-                self.status_flags = status_flags
-                self.status_text = status_text
-                self.video = video
-        #audio = keyExists("audio")
-        clipdata = ClipData(
-            response, keyExists("aaf_filename"), keyExists("aaf_path"), keyExists("asset"), keyExists("audio"),
-            keyExists("capture"), keyExists("clip_id"), keyExists("display_aspect_ratio"), keyExists("display_audio"),
-            keyExists("display_filesize"), keyExists("display_filetype"), keyExists("display_frame_rate"), keyExists("display_name"),
-            keyExists("display_standard"), keyExists("display_video_codec"), keyExists("display_video_size"), keyExists("has_audio"),
-            keyExists("has_data"), keyExists("has_index_file"), keyExists("has_video"), keyExists("is_recording"), keyExists("metadata"),
-            keyExists("mob_ids"), keyExists("proxy_filename"), keyExists("proxy_has_index_file"), keyExists("proxy_id"), keyExists("proxy_path"),
-            keyExists("status_flags"), keyExists("status_text"), keyExists("video")
-            )
-        return clipdata
+        return response
 
     def deleteClip(clip_id):
         """ 
@@ -627,8 +564,16 @@ class FlowMetadata:
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Custom%20Metadata%20Fields/get_custom_metadata_fields
         """
         response = session.get(f"{dbUrl}/custom_metadata_fields", verify=False).json()
-        return response
-
+        class Fields:
+            def __init__(self, response):
+                self.fields_dict = dict()  
+                self.fields_data = response      
+                for field in response:
+                    self.fields_dict[field["name"]] = field["db_key"]
+                self.fields_dict = {key: self.fields_dict[key] for key in sorted(self.fields_dict.keys())}
+        fields = Fields(response)
+        return fields
+    
     def addCustomMetadataField(data):
         """ 
         Input: JSON Data
@@ -658,7 +603,8 @@ class FlowMetadata:
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Custom%20Metadata%20Fields/get_custom_metadata_fields__custom_field_id_
         """
-        response = session.get(f"{dbUrl}/custom_metadata_fields/{custom_field_id}", verify=False).json()
+        params = {'db_key': custom_field_id}
+        response = session.get(f"{dbUrl}/custom_metadata_fields/", params=params, verify=False).json()
         return response
 
     def updateCustomMetadataFieldUI(custom_field_id, data):
@@ -767,6 +713,7 @@ class FlowMetadata:
         )
         response = session.get(f"{dbUrl}/files", verify=False, params=params).json()
         return response
+    
     def getFile(file_id):
         """ 
         Input: custom_asset_type_id
@@ -778,6 +725,17 @@ class FlowMetadata:
         response = session.get(f"{dbUrl}/files/{file_id}", verify=False).json()
         return response
 
+##############        
+### IMAGES ###
+##############
+    def getImageData(image_id):
+        response = session.get(f"{dbUrl}/images/{image_id}", verify=False).json()
+        return response
+
+    def updateImageData(image_id, data):
+        response = session.put(f"{dbUrl}/images/{image_id}", data=data, verify=False).json()
+        return response
+    
 ###############        
 ### MARKERS ###
 ###############
@@ -801,7 +759,7 @@ class FlowMetadata:
         response = session.get(f"{dbUrl}/log_entries", verify=False, params=params).json()
         return response
     
-    def addCustomMarker(capture_id, in_time, out_time, fps, field_id, text, color="#00ff00"):
+    def addCustomMarker(capture_id, in_time, out_time, fps, text, color="#00ff00"):
         """
         Input: int(capture_id), str(in_time), str(out_time), int(fps), int(field_id), str(text)
             Timcode format for in and out: HH:MM:SS:FF
@@ -815,9 +773,11 @@ class FlowMetadata:
         data["capture_id"] = capture_id
         data["in_time"] = f"{in_time}:{fps}/1"
         data["out_time"] = f"{out_time}:{fps}/1"
-        data["custom"] = dict()
-        data["custom"][f"field_{field_id}"] = text
+        data["comment"] = text
+        # data["custom"] = dict()
+        # data["custom"][field_id] = text
         data["color"] = color
+        data = json.dumps(data)
         response = session.post(f"{dbUrl}/log_entries", verify=False, data=data).json()
         return response
 
@@ -854,39 +814,177 @@ class FlowMetadata:
         """ 
         Input: Searchterm as String
 
-        Returns Clip ids of search result
+        Returns json of search result
         """
-        response = session.get(f"https://{server}:8006/api/v2/search?q={term}", verify=False).json()
-        clipids = []
+        response = session.get(f"{searchUrl}?q={term}", verify=False).json()
+        results = []
         for hit in response:
-            clipids.append(hit["clip_id"])
-        return clipids
-
-    def getMediaSpaceClips(mediaspace):
-        """ 
-        Input: Mediaspace Name
-
-        Returns all Clip ids of the Mediaspace
-        """
-        response = session.get(f"https://{server}:8006/api/v2/search?mediaspace={mediaspace}", verify=False).json()
-        clipids = []
-        for hit in response:
-            if "clip_id" in hit:
-                clipids.append(hit["clip_id"])
-        return clipids
-
-    def getMediaSpaces():
-        """ 
-        Returns all avialable Mediaspacesdata for User
-        """
-        response = session.get(f"{dbUrl}/mediaspaces", verify=False).json()
-        return response
+            results.append(hit)
+        return results
 
     def searchAdvanced(data):
         """
         Advanced search.
 
         """
-        response = session.post(f"https://{server}:8006/api/v2/search", verify=False, data=data).json()
+        response = session.post(f"{searchUrl}/search", verify=False, data=data).json()
         return response
 
+    def searchList(template=""):
+        """
+        Get a list fields that can be searched.
+
+        """
+        response = session.get(f"{searchUrl}/fields?template={template}", verify=False).json()
+        return response
+    
+    def getMediaSpaceClips(mediaspace):
+        """ 
+        Input: Mediaspace Name
+
+        Returns all Clip ids of the Mediaspace
+        """
+        response = session.get(f"{searchUrl}?mediaspace={mediaspace}", verify=False).json()
+        return response
+
+    def getMediaSpaces():
+        """ 
+        Returns all avialable Mediaspacesdata for User
+        """
+        response = session.get(f"{dbUrl}/mediaspaces/all", verify=False).json()
+        return response
+    
+    def deleteMediaSpace(mediaspace_id, from_database=False):
+        """ 
+        Returns all avialable Mediaspacesdata for User
+        """
+        params = dict()
+        params["from_database"] = from_database
+        response = session.delete(f"{dbUrl}/mediaspaces/{mediaspace_id}", params=params, verify=False).json()
+        return response
+    
+############       
+### Scan ###
+############
+class Scan:
+    def getScanJobs():
+        """
+        Get a list of Scan Jobs
+        """
+        response = session.get(f"{scanUrl}/jobs").json()
+        return response
+    
+    def stopScanJob(uuid):
+        """
+        Stop a Scan Job
+        """
+        response = session.put(f"{scanUrl}/jobs/{uuid}/stop").json()
+        return response
+    
+    def scanAsset(data):
+        """
+        scan an Asset
+        """
+        response = session.post(f"{scanUrl}/asset", data=data).json()
+        return response
+    
+    def getAssetScanState(scan_job_uuid):
+        """
+        returns the state of an Asset scan job
+        """
+        response = session.get(f"{scanUrl}/asset/{scan_job_uuid}").json()
+        return response
+##################       
+### Automation ###
+##################
+class FlowAutomation:
+    def getAutomationJobs():
+        """
+        Get a list of Automation Jobs
+        """
+        response = session.get(f"{automationUrl}/jobs").json()
+        return response
+    
+    def deleteAutomationJob(uuid):
+        """
+        Delete a Automation Job
+        """
+        response = session.delete(f"{automationUrl}/jobs/{uuid}").json()
+        return response
+    def getTemplates():
+        """
+        get a list of templates
+        """
+        response = session.get(f"{automationUrl}/templates").json()
+        return response
+    def loadTemplate(data):
+        """
+        Load Template from JSON
+        """
+        response = session.post(f"{automationUrl}/templates/load", data=data).json()
+        return response
+    def deactivateTemplate(uuid):
+        """
+        deactivate a Template
+        """
+        response = session.put(f"{automationUrl}/templates/{uuid}/deactivate").json()
+        return response
+    def activateTemplate(uuid):
+        """
+        activate a Template
+        """
+        response = session.put(f"{automationUrl}/templates/{uuid}/activate").json()
+        return response
+    def updateTemplate(uuid, data):
+        """
+        Update a Template
+        """
+        params = {"validate": "true"}
+        response = session.put(f"{automationUrl}/templates/{uuid}", data=data, params=params).json()
+        return response
+    def triggerExternalTemplate(uuid, data):
+        """
+        Trigger an External Template
+        """
+        response = session.put(f"{automationUrl}/templates/external/{uuid}/trigger", data=data).json()
+        return response
+    def getJob(uuid):
+        """
+        Get an automation job status
+        """
+        """
+        Trigger an External Template
+        """
+        response = session.get(f"{automationUrl}/jobs/{uuid}").json()
+        return response
+    def getJobStatus(uuid):
+        """
+        Get an automation job status
+        """
+        """
+        Trigger an External Template
+        """
+        response = session.get(f"{automationUrl}/jobs/{uuid}/status").json()
+        return response
+    def getJobTasks(uuid):
+        """
+        Get an automation job status
+        """
+        """
+        Trigger an External Template
+        """
+        response = session.get(f"{automationUrl}/jobs/{uuid}/tasks").json()
+        return response
+
+
+#############      
+### Mount ###
+#############
+class EsMount:
+    def mount(directory, data):
+        data = data
+        data["default_directory"]["directory"] = directory
+        print(json.dumps(data, indent=4))
+        data = json.dumps(data)
+        response = session.put(f"{mountUrl}/mount", data=data)
+        return response
