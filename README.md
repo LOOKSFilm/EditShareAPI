@@ -1,5 +1,4 @@
-# EditShareAPI
-### (Work in Progress)
+# EditShareAPI (WIP)
 A Python module for the Editshare API: https://developers.editshare.com/
 
 
