@@ -19,8 +19,14 @@ class EsAuth:
             mountUrl = f"https://{server}:8006/api/v2/mount"
             global scanUrl
             scanUrl = f"https://{server}:8006/api/v2/scan"
+            global adminUrl
+            adminUrl = f"https://{server}:8006/api/v2/admin"
+            global transferUrl
+            transferUrl = f"https://{server}:8006/api/v2/transfer"
             session.auth = (user, password)
             #print(session.auth)
+            global headers
+            headers = {'accept': 'application/json'}
             data = [user, password]
             connection = session.post(f"https://{server}:8006/api/v2/admin/check_password", verify=False, json=data)
             return connection.status_code
@@ -32,6 +38,31 @@ class FlowMetadata:
     def ping():
         ping = session.get(f"{dbUrl}/ping", verify=False)
         return ping
+    
+    def getMediaSpaceClips(mediaspace):
+        """ 
+        Input: Mediaspace Name
+
+        Returns all Clip ids of the Mediaspace
+        """
+        response = session.get(f"{searchUrl}?mediaspace={mediaspace}", verify=False).json()
+        return response
+
+    def getMediaSpaces():
+        """ 
+        Returns all avialable Mediaspacesdata for User
+        """
+        response = session.get(f"{dbUrl}/mediaspaces/all", verify=False).json()
+        return response
+    
+    def deleteMediaSpace(mediaspace_id, from_database=False):
+        """ 
+        Returns all avialable Mediaspacesdata for User
+        """
+        params = dict()
+        params["from_database"] = from_database
+        response = session.delete(f"{dbUrl}/mediaspaces/{mediaspace_id}", params=params, verify=False).json()
+        return response
     
     def addAsset(data):
         """ 
@@ -63,7 +94,7 @@ class FlowMetadata:
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Assets%20and%20Asset%20Metadata/put_assets__asset_id_
         """
-        response = session.put(f"{dbUrl}/assets/{asset_id}", verify=False, data=data)
+        response = session.put(f"{dbUrl}/assets/{asset_id}", verify=False, data=data).json()
         return response
     
     def deleteAsset(asset_id):
@@ -173,13 +204,15 @@ class FlowMetadata:
             "export_format": "xml",
             "asset_metadata": "true",
             "asset_custom_metadata": "true",
+            "asset_custom_metadata_template": "LOOKS-PROGRESS",
             "file_details": "true",
             "location_details": "true",
             "backup_details": "true",
-            "markers": "true",
+            "markers": "false",
             "csv_framerates": "false",
             "csv_comments": "false",
-            "csv_bom": "false",
+            "csv_bom": "true",
+            "template": "LOOKS-PROGRESS"
         }
         response = session.get(f"{dbUrl}/assets/{asset_id}/export", params=params)
         return response
@@ -383,7 +416,7 @@ class FlowMetadata:
         response = session.get(f"{dbUrl}/clips/{clip_id}", verify=False, params=params).json()
         return response
 
-    def deleteClip(clip_id):
+    def deleteClip(clip_id, all="false", metadata="false", online="false", archive="false", nearline="false", proxy="false", ark_tape="false", ark_disk="false", aaf="false"):
         """ 
         Input: clip_id
 
@@ -391,7 +424,18 @@ class FlowMetadata:
 
         https://developers.editshare.com/?urls.primaryName=EditShare%20FLOW%20Metadata#/Clips/delete_clips__clip_id_
         """
-        response = session.delete(f"{dbUrl}/clips/{clip_id}", verify=False).json()
+        params = {
+            "all": all,
+            "metadata": metadata,
+            "online": online,
+            "archive": archive,
+            "nearline": nearline,
+            "proxy": proxy,
+            "ark_tape": ark_tape,
+            "ark_disk": ark_disk,
+            "aaf": aaf
+        }
+        response = session.delete(f"{dbUrl}/clips/{clip_id}", verify=False, params=params, headers=headers).json()
         return response
 
     def getFileDetails(clip_id):
@@ -714,7 +758,7 @@ class FlowMetadata:
         response = session.get(f"{dbUrl}/files", verify=False, params=params).json()
         return response
     
-    def getFile(file_id):
+    def getFileData(file_id):
         """ 
         Input: custom_asset_type_id
         
@@ -806,72 +850,32 @@ class FlowMetadata:
         data["color"] = color
         response = session.put(f"{dbUrl}/log_entries/{log_entry_id}", verify=False, data=data).json()
         return response
-
-##############        
-### SEARCH ###
-##############
-    def searchQuick(term):
-        """ 
-        Input: Searchterm as String
-
-        Returns json of search result
-        """
-        response = session.get(f"{searchUrl}?q={term}", verify=False).json()
-        results = []
-        for hit in response:
-            results.append(hit)
-        return results
-
-    def searchAdvanced(data):
-        """
-        Advanced search.
-
-        """
-        response = session.post(f"{searchUrl}/search", verify=False, data=data).json()
-        return response
-
-    def searchList(template=""):
-        """
-        Get a list fields that can be searched.
-
-        """
-        response = session.get(f"{searchUrl}/fields?template={template}", verify=False).json()
-        return response
-    
-    def getMediaSpaceClips(mediaspace):
-        """ 
-        Input: Mediaspace Name
-
-        Returns all Clip ids of the Mediaspace
-        """
-        response = session.get(f"{searchUrl}?mediaspace={mediaspace}", verify=False).json()
-        return response
-
-    def getMediaSpaces():
-        """ 
-        Returns all avialable Mediaspacesdata for User
-        """
-        response = session.get(f"{dbUrl}/mediaspaces/all", verify=False).json()
-        return response
-    
-    def deleteMediaSpace(mediaspace_id, from_database=False):
-        """ 
-        Returns all avialable Mediaspacesdata for User
-        """
-        params = dict()
-        params["from_database"] = from_database
-        response = session.delete(f"{dbUrl}/mediaspaces/{mediaspace_id}", params=params, verify=False).json()
-        return response
     
 ############       
 ### Scan ###
 ############
 class Scan:
-    def getScanJobs():
+    def getScanJobs(state, start=0, count=100):
         """
         Get a list of Scan Jobs
+        state options: 
+            - "unknown"
+            - "unprocessed"
+            - "queued"
+            - "in progress"
+            - "stopping"
+            - "aborted"
+            - "failed"
+            - "complete"
+            - "cancelled"
+            - "not required"
         """
-        response = session.get(f"{scanUrl}/jobs").json()
+        params = {
+            "state": state,
+            "start": start,
+            "count": count
+        }
+        response = session.get(f"{scanUrl}/jobs", params=params, headers=headers).json()
         return response
     
     def stopScanJob(uuid):
@@ -955,7 +959,25 @@ class FlowAutomation:
         """
         Trigger an External Template
         """
-        response = session.get(f"{automationUrl}/jobs/{uuid}").json()
+        
+        params = {"include_messages": "true"}
+        response = session.get(f"{automationUrl}/jobs/{uuid}", params=params, headers=headers).json()
+        return response
+    def getJobs(message="true", from_date="", to_date="", template_id=""):
+        """
+        Get an automation job status
+        """
+        """
+        Trigger an External Template
+        """
+        
+        params = {
+            "include_messages": "true",
+            "from": from_date,
+            "to": to_date,
+            "template_id": template_id
+            }
+        response = session.get(f"{automationUrl}/jobs", params=params, headers=headers).json()
         return response
     def getJobStatus(uuid):
         """
@@ -975,6 +997,141 @@ class FlowAutomation:
         """
         response = session.get(f"{automationUrl}/jobs/{uuid}/tasks").json()
         return response
+    def getJobMessages(uuid):
+        """
+        Get an automation job status
+        """
+        """
+        Trigger an External Template
+        """
+        response = session.get(f"{automationUrl}/jobs/{uuid}/messages").json()
+        return response
+
+##############        
+### SEARCH ###
+##############
+class FlowSearch():
+    def searchQuick(term):
+        """ 
+        Input: Searchterm as String
+
+        Returns json of search result
+        """
+        response = session.get(f"{searchUrl}?q={term}", verify=False).json()
+        results = []
+        for hit in response:
+            results.append(hit)
+        return results
+
+    COMBINE_ANY = "MATCH_ANY"
+    COMBINE_ALL = "MATCH_ALL"
+    def searchAdvanced(combine, filters):
+        """
+        Advanced search.
+        combine: FlowSearch.COMBINE_ANY or FlowSearch.COMBINE_ALL
+        """
+        data = dict()
+        data["combine"] = combine
+        data["filters"] = list()
+        data["filters"] = filters
+        #print(json.dumps(data, indent=4))
+        data = json.dumps(data)
+        response = session.post(f"{searchUrl}/search", verify=False, data=data).json()
+        return response
+
+    def searchList(template=""):
+        """
+        Get a list fields that can be searched.
+
+        """
+        response = session.get(f"{searchUrl}/fields?template={template}", verify=False).json()
+        return response
+    
+    
+    GROUP_FILES = "SEARCH_FILES"
+    GROUP_ASSETS = "SEARCH_ASSETS"
+    GROUP_LOGS = "SEARCH_LOGS"
+    GROUP_IMAGES = "SEARCH_IMAGES"
+    GROUP_MARKERS = "SEARCH_SEQUENCE_MARKERS"
+    MATCH_IS = "EQUAL_TO"
+    MATCH_IS_NOT = "IS_NOT_EQUAL_TO"
+    MATCH_CONTAINS = "CONTAINS"
+    MATCH_CONTAINS_NOT = "DOES_NOT_CONTAIN"
+    MATCH_BEGINNS_WITH = "BEGINS_WITH"
+    MATCH_ENDS_WITH = "ENDS_WITH"
+    MATCH_LESS_THAN = "LESS_THAN"
+    MATCH_GREATER_THAN = "GREATER_THAN"
+    MATCH_GREATER_THAN_EQUAL_TO = "GREATER_THAN_EQUAL_TO"
+    MATCH_LESS_THAN_EQUAL_TO = "LESS_THAN_EQUAL_TO"
+    MATCH_CONTAINS_WORD = "CONTAINS_WORD"
+    MATCH_IS_OLDER_THAN = "IS_OLDER_THAN"
+    MATCH_IS_NEWER_THAN = "IS_NEWER_THAN"
+    MATCH_LATER_THAN = "LATER_THAN"
+    MATCH_LATER_THAN_EQUAL_TO = "LATER_THAN_EQUAL_TO"
+    MATCH_EARLIER_THAN = "EARLIER_THAN"
+    MATCH_EARLIER_THAN_EQUAL_TO = "EARLIER_THAN_EQUAL_TO"
+
+    def createFilter(fieldname, group, match, search):
+        """ 
+        Create search Filter: data["filters"].append(createFilter(fieldname, group, match, search))
+
+        #### Examples:
+        - fieldname = "field_101" or "CLIPNAME" or ...
+        - group = FlowSearch.GROUP... 
+        - match = FlowSearch.MATCH...
+        - search = "Search phrase"
+
+        ** For CLIPNAME use GROUP_FILES **
+        """
+        filter = dict()
+        filter["field"] = dict()
+        if fieldname.startswith("field_"):
+            filter["custom_field"] = fieldname
+            filter["field"]["fixed_field"] = f"CUSTOM_{fieldname}"
+            filter["field"]["group"] = group
+            filter["match"] = match
+            filter["search"] = search
+        else:
+            filter["field"]["fixed_field"] = fieldname
+            filter["field"]["group"] = group
+            filter["match"] = match
+            filter["search"] = search
+        return filter
+#############      
+### Admin ###
+#############
+class FlowAdmin:
+    def getProxyConfig():
+        params = {
+            "type": "all"
+        }
+        response = session.get(f"{adminUrl}/proxies/configuration", params=params).json()
+        return response
+    def updateProxyConfig(data):
+        # data = {
+        #     "name": "HD",
+        #     "quality": "high",
+        #     "size": "full",
+        #     "sizes": [
+        #         "full",
+        #         "half",
+        #         "quarter"
+        #     ],
+        #     "codec": "h264",
+        #     "codecs": [
+        #         "h264",
+        #         "prores proxy"
+        #     ],
+        #     "bitrate_bps": 1048576,
+        #     "bitrate": "1.05 Mbps",
+        #     "audio_bitrate_bps": 32000,
+        #     "audio_bitrate": "32 Kbps",
+        #     "profile": "main",
+        #     "key": "hd_editing"
+        #     }
+        response = session.put(f"{adminUrl}/proxies/configuration", data=data, headers=headers).json()
+        return response
+
 
 
 #############      
@@ -988,3 +1145,53 @@ class EsMount:
         data = json.dumps(data)
         response = session.put(f"{mountUrl}/mount", data=data)
         return response
+
+################      
+### Transfer ###
+################
+class EsTransfer:
+    def getCopyJobs():
+        response = session.get(f"{transferUrl}/copy", verify=False).json()
+        return response
+    
+    def copyClipByID(clipID, destinationMediaSpace, overwrite=False, groupName="Optional name", priority="Normal"):
+        '''
+        '''
+        data = {
+            "copy_operation_list": [
+                {
+                "destination_mediaspace": destinationMediaSpace,
+                "error_code": 0,
+                "group_name": groupName,
+                "operation_priority": priority,
+                "operation_status": "Initial",
+                "overwrite_flag": overwrite,
+                "source_clip_id": clipID
+                }
+            ]
+        }
+        data = json.dumps(data)
+        response = session.post(f"{transferUrl}/copy", data=data, verify=False).json()
+        return response
+    
+    # def copyFolder(source_mediaspace, source_folder, overwrite=False, groupName="Optional name", priority="Normal"):
+    #     '''
+    #     ### Funktioniert noch nicht
+    #     '''
+    #     data = {
+    #         "copy_operation_list": [
+    #             {
+    #             "destination_mediaspace": destination_mediaspace,
+    #             "error_code": 0,
+    #             "group_name": groupName,
+    #             "operation_priority": priority,
+    #             "operation_status": "Initial",
+    #             "overwrite_flag": overwrite,
+    #             "source_folder": source_folder,
+    #             "source_mediaspace": source_mediaspace
+    #             }
+    #         ]
+    #     }
+    #     data = json.dumps(data)
+    #     response = session.post(f"{transferUrl}/copy", data=data, verify=False).json()
+    #     return response
