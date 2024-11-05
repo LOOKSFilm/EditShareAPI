@@ -4,27 +4,27 @@ A Python module for the Editshare API: https://developers.editshare.com/
 
 ## Install
 1. create Python Virtual Environment
-```
+```bash
 python -m venv .venv
 ```
 2. clone repo in .venv/Lib/site-packages
-```
+```bash
 cd .\.venv\Lib\site-packages\
 gh repo clone LOOKSFilm/EditShareAPI
 ```
 3. install requests
-```
+```bash
 pip install requests
 ```
 or via requirements.txt
-```
-cd cd .\.venv\Lib\site-packages\EditShareAPI
+```bash
+cd .\.venv\Lib\site-packages\EditShareAPI
 pip install requirements.txt
 ```
 
 ### Import
 Import different classes e.g.:
-```
+```Python
 from EditShareAPI import EsAuth, FlowMetadata
 ```
 Available Classes are: 
@@ -35,7 +35,7 @@ Available Classes are:
  - FlowAdmin
  - FlowAutomation
  - FlowSearch
- 
+
 ### Login
 ```Python
 from EditShareAPI import EsAuth
