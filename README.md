@@ -9,8 +9,7 @@ python -m venv .venv
 ```
 2. clone repo in .venv/Lib/site-packages
 ```bash
-cd .\.venv\Lib\site-packages\
-gh repo clone LOOKSFilm/EditShareAPI
+gh repo clone LOOKSFilm/EditShareAPI .\.venv\Lib\site-packages\EditShareAPI
 ```
 3. install requests
 ```bash
@@ -18,8 +17,7 @@ pip install requests
 ```
 or via requirements.txt
 ```bash
-cd .\.venv\Lib\site-packages\EditShareAPI
-pip install requirements.txt
+pip install -r .\.venv\Lib\site-packages\EditShareAPI\requirements.txt
 ```
 
 ### Import
