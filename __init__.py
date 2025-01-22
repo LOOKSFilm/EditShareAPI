@@ -1150,8 +1150,11 @@ class EsMount:
 ### Transfer ###
 ################
 class EsTransfer:
-    def getCopyJobs():
-        response = session.get(f"{transferUrl}/copy", verify=False).json()
+    def getCopyJob(transfer_id=""):
+        if not transfer_id:
+            response = session.get(f"{transferUrl}/copy", verify=False).json()
+        else:
+            response = session.get(f"{transferUrl}/copy/{transfer_id}", verify=False).json()
         return response
     
     def copyClipByID(clipID, destinationMediaSpace, overwrite=False, groupName="Optional name", priority="Normal"):
