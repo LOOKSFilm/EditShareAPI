@@ -23,6 +23,8 @@ class EsAuth:
             adminUrl = f"https://{server}:8006/api/v2/admin"
             global transferUrl
             transferUrl = f"https://{server}:8006/api/v2/transfer"
+            global connectUrl
+            connectUrl = f"https://localhost:9014"
             session.auth = (user, password)
             #print(session.auth)
             global headers
@@ -1145,7 +1147,29 @@ class EsMount:
         data = json.dumps(data)
         response = session.put(f"{mountUrl}/mount", data=data)
         return response
-
+    
+###############      
+### Connect ###
+###############
+class EsConnect:
+    def getMounts():
+        response = requests.get(f"http://localhost:9014/mounts").json()
+        return response
+    def getMount(server_group_uuid, mediaspace_name):
+        response = requests.get(f"http://localhost:9014/mounts/{server_group_uuid}/{mediaspace_name}_1").json()
+        return response
+    def mount(server_group_uuid, mediaspace_name, driveletter):
+        data = {
+            "mount_choice": driveletter,
+        }
+        response = requests.patch(f"http://localhost:9014/mounts/{server_group_uuid}/{mediaspace_name}_1", json=data).json()
+        return response
+    def unmount(server_group_uuid, mediaspace_name):
+        data = {
+            "mount_choice": None,
+        }
+        response = requests.patch(f"http://localhost:9014/mounts/{server_group_uuid}/{mediaspace_name}_1", json=data).json()
+        return response
 ################      
 ### Transfer ###
 ################
