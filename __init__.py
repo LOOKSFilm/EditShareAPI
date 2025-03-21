@@ -23,6 +23,8 @@ class EsAuth:
             adminUrl = f"https://{server}:8006/api/v2/admin"
             global transferUrl
             transferUrl = f"https://{server}:8006/api/v2/transfer"
+            global connectUrl
+            connectUrl = f"https://localhost:9014"
             session.auth = (user, password)
             #print(session.auth)
             global headers
@@ -875,28 +877,28 @@ class Scan:
             "start": start,
             "count": count
         }
-        response = session.get(f"{scanUrl}/jobs", params=params, headers=headers).json()
+        response = session.get(f"{scanUrl}/jobs", params=params, headers=headers, verify=False).json()
         return response
     
     def stopScanJob(uuid):
         """
         Stop a Scan Job
         """
-        response = session.put(f"{scanUrl}/jobs/{uuid}/stop").json()
+        response = session.put(f"{scanUrl}/jobs/{uuid}/stop", verify=False).json()
         return response
     
     def scanAsset(data):
         """
         scan an Asset
         """
-        response = session.post(f"{scanUrl}/asset", data=data).json()
+        response = session.post(f"{scanUrl}/asset", data=data, verify=False).json()
         return response
     
     def getAssetScanState(scan_job_uuid):
         """
         returns the state of an Asset scan job
         """
-        response = session.get(f"{scanUrl}/asset/{scan_job_uuid}").json()
+        response = session.get(f"{scanUrl}/asset/{scan_job_uuid}", verify=False).json()
         return response
 ##################       
 ### Automation ###
@@ -906,20 +908,20 @@ class FlowAutomation:
         """
         Get a list of Automation Jobs
         """
-        response = session.get(f"{automationUrl}/jobs").json()
+        response = session.get(f"{automationUrl}/jobs", verify=False).json()
         return response
     
     def deleteAutomationJob(uuid):
         """
         Delete a Automation Job
         """
-        response = session.delete(f"{automationUrl}/jobs/{uuid}").json()
+        response = session.delete(f"{automationUrl}/jobs/{uuid}", verify=False).json()
         return response
     def getTemplates():
         """
         get a list of templates
         """
-        response = session.get(f"{automationUrl}/templates").json()
+        response = session.get(f"{automationUrl}/templates", verify=False).json()
         return response
     def loadTemplate(data):
         """
@@ -931,26 +933,26 @@ class FlowAutomation:
         """
         deactivate a Template
         """
-        response = session.put(f"{automationUrl}/templates/{uuid}/deactivate").json()
+        response = session.put(f"{automationUrl}/templates/{uuid}/deactivate", verify=False).json()
         return response
     def activateTemplate(uuid):
         """
         activate a Template
         """
-        response = session.put(f"{automationUrl}/templates/{uuid}/activate").json()
+        response = session.put(f"{automationUrl}/templates/{uuid}/activate", verify=False).json()
         return response
     def updateTemplate(uuid, data):
         """
         Update a Template
         """
         params = {"validate": "true"}
-        response = session.put(f"{automationUrl}/templates/{uuid}", data=data, params=params).json()
+        response = session.put(f"{automationUrl}/templates/{uuid}", data=data, params=params, verify=False).json()
         return response
     def triggerExternalTemplate(uuid, data):
         """
         Trigger an External Template
         """
-        response = session.put(f"{automationUrl}/templates/external/{uuid}/trigger", data=data).json()
+        response = session.put(f"{automationUrl}/templates/external/{uuid}/trigger", data=data, verify=False).json()
         return response
     def getJob(uuid):
         """
@@ -961,7 +963,7 @@ class FlowAutomation:
         """
         
         params = {"include_messages": "true"}
-        response = session.get(f"{automationUrl}/jobs/{uuid}", params=params, headers=headers).json()
+        response = session.get(f"{automationUrl}/jobs/{uuid}", params=params, headers=headers, verify=False).json()
         return response
     def getJobs(message="true", from_date="", to_date="", template_id=""):
         """
@@ -977,7 +979,7 @@ class FlowAutomation:
             "to": to_date,
             "template_id": template_id
             }
-        response = session.get(f"{automationUrl}/jobs", params=params, headers=headers).json()
+        response = session.get(f"{automationUrl}/jobs", params=params, headers=headers, verify=False).json()
         return response
     def getJobStatus(uuid):
         """
@@ -986,7 +988,7 @@ class FlowAutomation:
         """
         Trigger an External Template
         """
-        response = session.get(f"{automationUrl}/jobs/{uuid}/status").json()
+        response = session.get(f"{automationUrl}/jobs/{uuid}/status", verify=False).json()
         return response
     def getJobTasks(uuid):
         """
@@ -995,7 +997,7 @@ class FlowAutomation:
         """
         Trigger an External Template
         """
-        response = session.get(f"{automationUrl}/jobs/{uuid}/tasks").json()
+        response = session.get(f"{automationUrl}/jobs/{uuid}/tasks", verify=False).json()
         return response
     def getJobMessages(uuid):
         """
@@ -1004,7 +1006,7 @@ class FlowAutomation:
         """
         Trigger an External Template
         """
-        response = session.get(f"{automationUrl}/jobs/{uuid}/messages").json()
+        response = session.get(f"{automationUrl}/jobs/{uuid}/messages", verify=False).json()
         return response
 
 ##############        
@@ -1145,13 +1147,38 @@ class EsMount:
         data = json.dumps(data)
         response = session.put(f"{mountUrl}/mount", data=data)
         return response
-
+    
+###############      
+### Connect ###
+###############
+class EsConnect:
+    def getMounts():
+        response = requests.get(f"http://localhost:9014/mounts").json()
+        return response
+    def getMount(server_group_uuid, mediaspace_name):
+        response = requests.get(f"http://localhost:9014/mounts/{server_group_uuid}/{mediaspace_name}_1").json()
+        return response
+    def mount(server_group_uuid, mediaspace_name, driveletter):
+        data = {
+            "mount_choice": driveletter,
+        }
+        response = requests.patch(f"http://localhost:9014/mounts/{server_group_uuid}/{mediaspace_name}_1", json=data).json()
+        return response
+    def unmount(server_group_uuid, mediaspace_name):
+        data = {
+            "mount_choice": None,
+        }
+        response = requests.patch(f"http://localhost:9014/mounts/{server_group_uuid}/{mediaspace_name}_1", json=data).json()
+        return response
 ################      
 ### Transfer ###
 ################
 class EsTransfer:
-    def getCopyJobs():
-        response = session.get(f"{transferUrl}/copy", verify=False).json()
+    def getCopyJob(transfer_id=""):
+        if not transfer_id:
+            response = session.get(f"{transferUrl}/copy", verify=False).json()
+        else:
+            response = session.get(f"{transferUrl}/copy/{transfer_id}", verify=False).json()
         return response
     
     def copyClipByID(clipID, destinationMediaSpace, overwrite=False, groupName="Optional name", priority="Normal"):
